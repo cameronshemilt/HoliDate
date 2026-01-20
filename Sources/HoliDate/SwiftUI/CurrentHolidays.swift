@@ -12,7 +12,7 @@ public struct CurrentHolidays: DynamicProperty {
         store.holidays.filter {
             $0.isDuring(
                 store.today,
-                calendar: .current
+                calendar: HoliDateEnvironment.calendar
             )
         }
     }

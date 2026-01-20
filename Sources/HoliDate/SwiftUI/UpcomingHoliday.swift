@@ -6,7 +6,7 @@ public struct UpcomingHoliday: DynamicProperty {
 
     @State private var store: HolidayStore = .shared
 
-    public init(after _: Date? = nil) {}
+    public init() {}
 
     public var wrappedValue: (any Holiday)? {
         next?.0
@@ -22,7 +22,7 @@ public struct UpcomingHoliday: DynamicProperty {
                 holiday
                     .nextOccurrence(
                         after: store.today,
-                        calendar: .current
+                        calendar: HoliDateEnvironment.calendar
                     )
                     .map { date in
                         (holiday, date)

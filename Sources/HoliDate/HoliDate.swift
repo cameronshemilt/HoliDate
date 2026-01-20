@@ -1,13 +1,25 @@
 import Foundation
 
+public enum HolidayError: Error, Sendable, Equatable {
+    case duplicateID(String)
+    case holidayNotFound(String)
+}
+
 public enum HoliDate {
 
-    public static func registerDefaultHolidays() async {
-            await HolidayRegistry.shared.register(Christmas)
-            await HolidayRegistry.shared.register(Easter)
-            await refreshSnapshot()
+    public static func register(_ holiday: any Holiday) async throws {
+        try await HolidayRegistry.shared.register(holiday)
     }
-    
+
+    public static func deregister(_ holiday: any Holiday) async throws {
+        try await HolidayRegistry.shared.deregister(holiday)
+    }
+
+    public static func registerDefaultHolidays() async throws {
+            try await HolidayRegistry.shared.register(Christmas)
+            try await HolidayRegistry.shared.register(Easter)
+    }
+
     public static func startMidnightScheduler() async {
         await MidnightScheduler.shared.start()
     }

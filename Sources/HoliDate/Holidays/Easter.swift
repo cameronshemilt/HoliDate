@@ -20,7 +20,11 @@ public final class EasterHoliday: Holiday {
 
     public func nextOccurrence(after date: Date, calendar: Calendar) -> Date? {
         let year = calendar.component(.year, from: date)
-        let thisYear = easterDate(year: year, calendar: calendar)!
+
+        guard let thisYear = easterDate(year: year, calendar: calendar) else {
+            return nil
+        }
+
         return thisYear > date
             ? thisYear
             : easterDate(year: year + 1, calendar: calendar)

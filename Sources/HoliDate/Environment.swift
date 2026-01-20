@@ -11,4 +11,5 @@ public struct SystemDateProvider: DateProvider {
 @MainActor
 enum HoliDateEnvironment {
     static var dateProvider: DateProvider = SystemDateProvider()
+    static var calendar: Calendar = .current
 }

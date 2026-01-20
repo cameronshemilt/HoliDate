@@ -13,7 +13,7 @@ func upcomingHolidayIsEaster() {
         date: date,
         holidays: [HoliDate.Easter, HoliDate.Christmas]
     ) {
-        let upcoming = UpcomingHoliday(after: date)
+        let upcoming = UpcomingHoliday()
         #expect(upcoming.wrappedValue?.id == HoliDate.Easter.id)
     }
 }

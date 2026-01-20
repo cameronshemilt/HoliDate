@@ -12,7 +12,7 @@ public enum HoliDateSnapshot {
     public static func currentHolidays() -> [any Holiday] {
         let now = HoliDateEnvironment.dateProvider.now
         return holidays.filter {
-            $0.isDuring(now, calendar: .current)
+            $0.isDuring(now, calendar: HoliDateEnvironment.calendar)
         }
     }
 
@@ -22,7 +22,7 @@ public enum HoliDateSnapshot {
         holidays
             .compactMap { holiday in
                 holiday
-                    .nextOccurrence(after: date, calendar: .current)
+                    .nextOccurrence(after: date, calendar: HoliDateEnvironment.calendar)
                     .map { (holiday, $0) }
             }
             .min { $0.1 < $1.1 }
