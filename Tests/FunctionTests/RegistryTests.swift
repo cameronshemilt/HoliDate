@@ -63,25 +63,21 @@ func automaticSnapshotRefreshAfterRegistration() async throws {
     }
 
     // Verify holiday is not in snapshot before registration
-    let beforeHolidays = await HoliDate.getCurrentHolidays()
+    let beforeHolidays = HoliDate.getCurrentHolidays()
     #expect(!beforeHolidays.contains { $0.id == AutoRefreshTestHoliday.shared.id })
 
     // Register the holiday
     try await HolidayRegistry.shared.register(AutoRefreshTestHoliday.shared)
 
-    // Give the automatic refresh task a moment to complete
-    try await Task.sleep(for: .milliseconds(100))
-
     // Verify the snapshot was automatically updated and now contains our holiday
-    let afterHolidays = await HoliDate.getCurrentHolidays()
+    let afterHolidays = HoliDate.getCurrentHolidays()
     #expect(afterHolidays.contains { $0.id == AutoRefreshTestHoliday.shared.id })
 
     // Cleanup
     try await HolidayRegistry.shared.deregister(AutoRefreshTestHoliday.shared)
-    try await Task.sleep(for: .milliseconds(100))
 
     // Verify cleanup worked
-    let cleanupHolidays = await HoliDate.getCurrentHolidays()
+    let cleanupHolidays = HoliDate.getCurrentHolidays()
     #expect(!cleanupHolidays.contains { $0.id == AutoRefreshTestHoliday.shared.id })
 }
 
@@ -101,17 +97,15 @@ func deregisterRemovesHolidayAndRefreshesSnapshot() async throws {
 
     // Register the holiday
     try await HolidayRegistry.shared.register(DeregisterTestHoliday.shared)
-    try await Task.sleep(for: .milliseconds(100))
 
     // Verify our holiday is in the snapshot after registration
-    let beforeHolidays = await HoliDate.getCurrentHolidays()
+    let beforeHolidays = HoliDate.getCurrentHolidays()
     #expect(beforeHolidays.contains { $0.id == DeregisterTestHoliday.shared.id })
 
     // Deregister the holiday
     try await HolidayRegistry.shared.deregister(DeregisterTestHoliday.shared)
-    try await Task.sleep(for: .milliseconds(100))
 
     // Verify the snapshot was automatically updated and no longer contains our holiday
-    let afterHolidays = await HoliDate.getCurrentHolidays()
+    let afterHolidays = HoliDate.getCurrentHolidays()
     #expect(!afterHolidays.contains { $0.id == DeregisterTestHoliday.shared.id })
 }

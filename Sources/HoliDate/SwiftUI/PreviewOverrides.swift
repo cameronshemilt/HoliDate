@@ -1,5 +1,15 @@
 import Foundation
 
+/// Executes a closure with a custom date, holidays, and calendar for testing or SwiftUI previews.
+///
+/// Temporarily overrides the HoliDate environment, executes the closure, then restores the original state.
+/// Must be called on the MainActor.
+///
+/// - Parameters:
+///   - date: The date to use as "now" within the closure.
+///   - holidays: The holidays to register within the closure.
+///   - calendar: The calendar to use for date calculations. Defaults to `.current`.
+///   - run: The closure to execute with the overridden environment.
 @MainActor
 public func withHoliDatePreview(
     date: Date,
@@ -8,19 +18,19 @@ public func withHoliDatePreview(
     run: () -> Void
 ) {
     let originalProvider = HoliDateEnvironment.dateProvider
-    let originalHolidays = HoliDateSnapshot.holidays
+    let originalHolidays = HolidayStore.shared.holidays
     let originalCalendar = HoliDateEnvironment.calendar
 
     HoliDateEnvironment.dateProvider = PreviewDateProvider(date)
     HoliDateEnvironment.calendar = calendar
-    HoliDateSnapshot.update(holidays)
+    HolidayStore.shared.update(holidays)
     HolidayStore.shared.refresh()
 
     run()
 
     HoliDateEnvironment.dateProvider = originalProvider
     HoliDateEnvironment.calendar = originalCalendar
-    HoliDateSnapshot.update(originalHolidays)
+    HolidayStore.shared.update(originalHolidays)
     HolidayStore.shared.refresh()
 }
 

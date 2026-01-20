@@ -11,7 +11,7 @@ actor MidnightScheduler {
         task = Task {
             while !Task.isCancelled {
                 let now = Date()
-                let calendar = Calendar.current
+                let calendar = await MainActor.run { HoliDateEnvironment.calendar }
 
                 guard let nextMidnight = calendar.nextDate(
                     after: now,

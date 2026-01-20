@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Checks if a specific holiday is active today.
 @propertyWrapper
 @MainActor
 public struct IsHolidayToday: DynamicProperty {

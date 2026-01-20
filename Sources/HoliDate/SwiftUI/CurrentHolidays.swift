@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Provides all currently active holidays.
 @propertyWrapper
 @MainActor
 public struct CurrentHolidays: DynamicProperty {
@@ -9,11 +10,6 @@ public struct CurrentHolidays: DynamicProperty {
     public init() {}
 
     public var wrappedValue: [any Holiday] {
-        store.holidays.filter {
-            $0.isDuring(
-                store.today,
-                calendar: HoliDateEnvironment.calendar
-            )
-        }
+        store.currentHolidays()
     }
 }

@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Provides the next upcoming holiday.
 @propertyWrapper
 @MainActor
 public struct UpcomingHoliday: DynamicProperty {
@@ -17,17 +18,6 @@ public struct UpcomingHoliday: DynamicProperty {
     }
 
     private var next: ((any Holiday), Date)? {
-        store.holidays
-            .compactMap { holiday in
-                holiday
-                    .nextOccurrence(
-                        after: store.today,
-                        calendar: HoliDateEnvironment.calendar
-                    )
-                    .map { date in
-                        (holiday, date)
-                    }
-            }
-            .min { $0.1 < $1.1 }
+        store.nextUpcomingHoliday(after: store.today)
     }
 }

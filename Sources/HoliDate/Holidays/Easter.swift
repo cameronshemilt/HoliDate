@@ -5,6 +5,7 @@ public final class EasterHoliday: Holiday {
     public static let shared = EasterHoliday()
 
     public let id = "easter"
+
     public let name = "Easter"
 
     private init() {}
