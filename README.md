@@ -19,13 +19,13 @@ Add HoliDate to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/HoliDate.git", from: "1.0.0")
+    .package(url: "https://github.com/cameronshemilt/HoliDate.git", from: "1.0.0")
 ]
 ```
 
 Or add it through Xcode:
 1. File → Add Package Dependencies
-2. Enter the repository URL
+2. Enter the repository URL (`https://github.com/cameronshemilt/HoliDate`)
 3. Select version requirements
 
 ## Setup
@@ -198,9 +198,19 @@ HoliDate includes three built-in holidays:
 - **Easter** (`HoliDate.Easter`): Calculated using Computus algorithm for Western Easter
 - **Black Friday** (`HoliDate.BlackFriday`): Day after U.S. Thanksgiving (4th Thursday of November)
 
-## Testing
+## Previews & Testing
 
-Use `withHoliDatePreview` to test with custom dates and holidays:
+Use `withHoliDatePreview` to preview & test with custom dates and holidays:
+
+```swift
+#Preview {
+    let christmasDate = Calendar.current.date(from: .init(year: 2025, month: 12, day: 25))!
+
+    withHoliDatePreview(date: christmasDate, holidays: [HoliDate.Christmas]) {
+        ContentView()
+    }
+}
+```
 
 ```swift
 import Testing
