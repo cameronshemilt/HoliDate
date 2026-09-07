@@ -109,8 +109,6 @@ struct ContentView: View {
             if let date = $upcomingHoliday {
                 Text("On \(date.formatted())")
             }
-        } else {
-            Text("No holidays registered")
         }
     }
 }
@@ -168,23 +166,13 @@ The registry is actor-isolated and thread-safe. Registration and deregistration 
 ### Registering a Holiday
 
 ```swift
-do {
-    try await HoliDate.register(HoliDate.NewYearsDay)
-    // Snapshot is automatically refreshed - SwiftUI property wrappers update immediately
-} catch HolidayError.duplicateID(let id) {
-    print("Holiday \(id) is already registered")
-}
+try await HoliDate.register(HoliDate.NewYearsDay)
 ```
 
 ### Deregistering a Holiday
 
 ```swift
-do {
-    try await HoliDate.deregister(HoliDate.NewYearsDay)
-    // Snapshot is automatically refreshed
-} catch HolidayError.holidayNotFound(let id) {
-    print("Holiday \(id) wasn't registered")
-}
+try await HoliDate.deregister(HoliDate.NewYearsDay)
 ```
 
 `registerDefaultHolidays()` registers all three built-ins atomically. If any is already
@@ -192,11 +180,11 @@ registered, it throws without adding any of the others.
 
 ## Built-in Holidays
 
-HoliDate includes three built-in holidays:
-
-- **Christmas** (`HoliDate.Christmas`): December 24-26 (Christmas Eve, Christmas Day, Boxing Day)
-- **Easter** (`HoliDate.Easter`): Calculated using Computus algorithm for Western Easter
-- **Black Friday** (`HoliDate.BlackFriday`): Day after U.S. Thanksgiving (4th Thursday of November)
+| Holiday | API | Dates | Registered by default |
+| --- | --- | --- | :---: |
+| Christmas | `HoliDate.Christmas` | December 24-26, covering Christmas Eve, Christmas Day, and Boxing Day | [x] |
+| Easter | `HoliDate.Easter` | Western Easter Sunday, calculated using the Computus algorithm | [x] |
+| Black Friday | `HoliDate.BlackFriday` | The day after U.S. Thanksgiving, the fourth Thursday of November | [x] |
 
 Built-ins use Gregorian dates in the supplied calendar's time zone, regardless of
 the user's preferred calendar system. Custom holidays receive the original calendar
@@ -234,28 +222,3 @@ func testChristmasDetection() {
     }
 }
 ```
-
-## Architecture
-
-HoliDate uses a three-layer concurrency model:
-
-1. **Actor Layer** (`HolidayRegistry`): Thread-safe storage for registered holidays
-2. **MainActor Layer** (`HolidayStore`): Cached snapshot for fast reads with automatic date refreshes
-3. **Observable Layer**: SwiftUI property wrappers with `@Observable` for reactivity
-
-Holiday registration and deregistration go through the actor-isolated registry. The MainActor-isolated store provides cached, fast access for UI updates.
-
-## Automatic date updates
-
-The store starts observing system events when first used. It refreshes the date,
-calendar, and holiday results when the system day changes, the app becomes active,
-or the clock, time zone, or locale changes. SwiftUI property wrappers update from
-that shared snapshot. No scheduler setup is required.
-
-System notifications are not guaranteed to arrive at exactly midnight. Returning
-to the app triggers a refresh, and `getCurrentHolidays()` reads the current clock
-on every call. Date changes use the existing holiday list without reloading the
-registry. Preview date and calendar overrides remain in effect inside
-`withHoliDatePreview`.
-
-`startMidnightScheduler()` is deprecated and can be removed from existing apps.
