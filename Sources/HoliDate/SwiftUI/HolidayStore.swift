@@ -8,51 +8,58 @@ final class HolidayStore {
     static let shared = HolidayStore()
 
     private(set) var holidays: [any Holiday] = []
-    private(set) var today: Date = Date()
-
-    // Cached current holidays to avoid recomputing
+    private(set) var today: Date
+    private(set) var calendar: Calendar
     private var cachedCurrentHolidays: [any Holiday] = []
-    private var cacheDate: Date?
 
-    private init() {}
+    @ObservationIgnored private let now: () -> Date
+    @ObservationIgnored private let currentCalendar: () -> Calendar
+    @ObservationIgnored private var timeObserver: HolidayTimeObserver?
+
+    init(
+        notificationCenter: NotificationCenter = .default,
+        now: @escaping () -> Date = { HoliDateEnvironment.dateProvider.now },
+        calendar: @escaping () -> Calendar = { HoliDateEnvironment.calendar }
+    ) {
+        self.now = now
+        self.currentCalendar = calendar
+        self.today = now()
+        self.calendar = calendar()
+        timeObserver = HolidayTimeObserver(center: notificationCenter) { [weak self] in
+            self?.refresh()
+        }
+    }
 
     func update(_ newHolidays: [any Holiday]) {
         holidays = newHolidays
-        invalidateCache()
+        refresh()
+    }
+
+    func refreshIfNeeded() {
+        let calendar = currentCalendar()
+        guard calendar != self.calendar || !calendar.isDate(now(), inSameDayAs: today) else {
+            return
+        }
+        refresh()
     }
 
     func refresh() {
-        today = HoliDateEnvironment.dateProvider.now
-        invalidateCache()
-    }
-
-    private func invalidateCache() {
-        cachedCurrentHolidays = []
-        cacheDate = nil
-    }
-
-    public func currentHolidays() -> [any Holiday] {
-        let now = HoliDateEnvironment.dateProvider.now
-
-        // Return cached result if we've already computed for this date
-        if let cacheDate, HoliDateEnvironment.calendar.isDate(now, inSameDayAs: cacheDate) {
-            return cachedCurrentHolidays
-        }
-
-        // Recompute and cache
+        today = now()
+        calendar = currentCalendar()
         cachedCurrentHolidays = holidays.filter {
-            $0.isDuring(now, calendar: HoliDateEnvironment.calendar)
+            $0.isDuring(today, calendar: calendar)
         }
-        cacheDate = now
-
-        return cachedCurrentHolidays
     }
 
-    public func nextUpcomingHoliday(after date: Date) -> (any Holiday, Date)? {
+    func currentHolidays() -> [any Holiday] {
+        cachedCurrentHolidays
+    }
+
+    func nextUpcomingHoliday(after date: Date) -> (any Holiday, Date)? {
         holidays
             .compactMap { holiday in
                 holiday
-                    .nextOccurrence(after: date, calendar: HoliDateEnvironment.calendar)
+                    .nextOccurrence(after: date, calendar: calendar)
                     .map { (holiday, $0) }
             }
             .min { $0.1 < $1.1 }

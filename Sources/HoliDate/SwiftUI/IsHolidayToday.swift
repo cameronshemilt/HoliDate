@@ -15,7 +15,7 @@ public struct IsHolidayToday: DynamicProperty {
     public var wrappedValue: Bool {
         holiday.isDuring(
             store.today,
-            calendar: HoliDateEnvironment.calendar
+            calendar: store.calendar
         )
     }
 }

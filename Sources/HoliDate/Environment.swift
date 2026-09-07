@@ -12,5 +12,10 @@ public struct SystemDateProvider: DateProvider {
 @MainActor
 enum HoliDateEnvironment {
     static var dateProvider: DateProvider = SystemDateProvider()
-    static var calendar: Calendar = .current
+    // Read the system calendar afresh, while allowing deterministic preview overrides.
+    static var calendar: Calendar {
+        get { calendarOverride ?? .current }
+        set { calendarOverride = newValue }
+    }
+    static var calendarOverride: Calendar?
 }

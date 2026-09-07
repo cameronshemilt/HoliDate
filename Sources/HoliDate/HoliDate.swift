@@ -11,7 +11,7 @@ public enum HolidayError: Error, Sendable, Equatable {
 
 /// The main API for working with holidays in HoliDate.
 ///
-/// Provides methods for registering holidays, checking current holidays, and managing the automatic midnight refresh scheduler.
+/// Registers and checks holidays, with automatic updates when the date or app activity changes.
 public enum HoliDate {
 
     /// Registers a holiday in the global registry.
@@ -42,28 +42,28 @@ public enum HoliDate {
             try await HolidayRegistry.shared.register(Easter)
     }
 
-    /// Starts the automatic midnight scheduler.
-    ///
-    /// The scheduler automatically refreshes the holiday store at midnight each day, ensuring SwiftUI property wrappers
-    /// update correctly when days change. Call once at app startup if using SwiftUI property wrappers.
+    /// Updates start automatically when the holiday store is first used.
+    @available(*, deprecated, message: "Holiday updates are automatic; this call is no longer needed.")
     public static func startMidnightScheduler() async {
-        await MidnightScheduler.shared.start()
+        await HolidayStore.shared.refresh()
     }
 
     @MainActor
     static func refreshSnapshot() async {
         let holidays = await HolidayRegistry.shared.all()
         HolidayStore.shared.update(holidays)
-        HolidayStore.shared.refresh()
     }
 
     /// Returns all holidays that are currently active.
     ///
-    /// MainActor-isolated and uses cached results for efficiency. A holiday is "current" if its `isDuring(_:calendar:)` returns true for now.
+    /// MainActor-isolated. Checks the current day and calendar on each call and refreshes
+    /// cached results when either changes. A holiday is "current" if its `isDuring(_:calendar:)` returns true.
     ///
     /// - Returns: An array of holidays that are active right now.
     @MainActor
     public static func getCurrentHolidays() -> [any Holiday] {
-        HolidayStore.shared.currentHolidays()
+        // Explicit queries use the current clock even before a notification arrives.
+        HolidayStore.shared.refreshIfNeeded()
+        return HolidayStore.shared.currentHolidays()
     }
 }

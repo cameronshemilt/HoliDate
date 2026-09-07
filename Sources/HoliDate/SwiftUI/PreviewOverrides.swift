@@ -19,19 +19,17 @@ public func withHoliDatePreview(
 ) {
     let originalProvider = HoliDateEnvironment.dateProvider
     let originalHolidays = HolidayStore.shared.holidays
-    let originalCalendar = HoliDateEnvironment.calendar
+    let originalCalendar = HoliDateEnvironment.calendarOverride
 
     HoliDateEnvironment.dateProvider = PreviewDateProvider(date)
     HoliDateEnvironment.calendar = calendar
     HolidayStore.shared.update(holidays)
-    HolidayStore.shared.refresh()
 
     run()
 
     HoliDateEnvironment.dateProvider = originalProvider
-    HoliDateEnvironment.calendar = originalCalendar
+    HoliDateEnvironment.calendarOverride = originalCalendar
     HolidayStore.shared.update(originalHolidays)
-    HolidayStore.shared.refresh()
 }
 
 private struct PreviewDateProvider: DateProvider {

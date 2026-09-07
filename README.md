@@ -40,13 +40,10 @@ struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-        }
-        .task {
-            // Register built-in holidays
-            try? await HoliDate.registerDefaultHolidays()
-
-            // Optional: Enable automatic midnight updates for SwiftUI property wrappers
-            await HoliDate.startMidnightScheduler()
+                .task {
+                    // Register built-in holidays
+                    try? await HoliDate.registerDefaultHolidays()
+                }
         }
     }
 }
@@ -232,7 +229,22 @@ func testChristmasDetection() {
 HoliDate uses a three-layer concurrency model:
 
 1. **Actor Layer** (`HolidayRegistry`): Thread-safe storage for registered holidays
-2. **MainActor Layer** (`HolidayStore`): Cached snapshot for fast reads with automatic midnight refresh
+2. **MainActor Layer** (`HolidayStore`): Cached snapshot for fast reads with automatic date refreshes
 3. **Observable Layer**: SwiftUI property wrappers with `@Observable` for reactivity
 
-All mutations go through the actor-isolated registry, ensuring thread safety. The MainActor-isolated store provides cached, fast access for UI updates.
+Holiday registration and deregistration go through the actor-isolated registry. The MainActor-isolated store provides cached, fast access for UI updates.
+
+## Automatic date updates
+
+The store starts observing system events when first used. It refreshes the date,
+calendar, and holiday results when the system day changes, the app becomes active,
+or the clock, time zone, or locale changes. SwiftUI property wrappers update from
+that shared snapshot. No scheduler setup is required.
+
+System notifications are not guaranteed to arrive at exactly midnight. Returning
+to the app triggers a refresh, and `getCurrentHolidays()` reads the current clock
+on every call. Date changes use the existing holiday list without reloading the
+registry. Preview date and calendar overrides remain in effect inside
+`withHoliDatePreview`.
+
+`startMidnightScheduler()` is deprecated and can be removed from existing apps.
