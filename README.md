@@ -175,16 +175,16 @@ try await HoliDate.register(HoliDate.NewYearsDay)
 try await HoliDate.deregister(HoliDate.NewYearsDay)
 ```
 
-`registerDefaultHolidays()` registers all three built-ins atomically. If any is already
-registered, it throws without adding any of the others.
+`registerDefaultHolidays()` registers Christmas and Easter atomically. If either is already
+registered, it throws without adding the other. Register Black Friday separately if needed.
 
 ## Built-in Holidays
 
 | Holiday | API | Dates | Registered by default |
 | --- | --- | --- | :---: |
-| Christmas | `HoliDate.Christmas` | December 24-26, covering Christmas Eve, Christmas Day, and Boxing Day | [x] |
-| Easter | `HoliDate.Easter` | Western Easter Sunday, calculated using the Computus algorithm | [x] |
-| Black Friday | `HoliDate.BlackFriday` | The day after U.S. Thanksgiving, the fourth Thursday of November | [x] |
+| Christmas | `HoliDate.Christmas` | December 24-26, covering Christmas Eve, Christmas Day, and Boxing Day | ✅ |
+| Easter | `HoliDate.Easter` | Western Easter Sunday, calculated using the Computus algorithm | ✅ |
+| Black Friday | `HoliDate.BlackFriday` | The day after U.S. Thanksgiving, the fourth Thursday of November | ❌ |
 
 Built-ins use Gregorian dates in the supplied calendar's time zone, regardless of
 the user's preferred calendar system. Custom holidays receive the original calendar
