@@ -34,12 +34,12 @@ public enum HoliDate {
         try await HolidayRegistry.shared.deregister(holiday)
     }
 
-    /// Registers the built-in holidays (Christmas and Easter).
+    /// Registers Christmas, Easter, and Black Friday as one atomic batch.
+    /// If any is already registered, the registry remains unchanged.
     ///
     /// - Throws: `HolidayError.duplicateID` if any default holiday is already registered.
     public static func registerDefaultHolidays() async throws {
-            try await HolidayRegistry.shared.register(Christmas)
-            try await HolidayRegistry.shared.register(Easter)
+        try await HolidayRegistry.shared.register([Christmas, Easter, BlackFriday])
     }
 
     /// Updates start automatically when the holiday store is first used.

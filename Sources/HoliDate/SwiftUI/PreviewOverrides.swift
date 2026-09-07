@@ -1,6 +1,7 @@
-import Foundation
+import SwiftUI
 
-/// Executes a closure with a custom date, holidays, and calendar for testing or SwiftUI previews.
+/// Executes synchronous test code with a custom date, holidays, and calendar.
+/// Use `HoliDatePreview` to render SwiftUI views with persistent overrides.
 ///
 /// Temporarily overrides the HoliDate environment, executes the closure, then restores the original state.
 /// Must be called on the MainActor.
@@ -25,14 +26,43 @@ public func withHoliDatePreview(
     HoliDateEnvironment.calendar = calendar
     HolidayStore.shared.update(holidays)
 
+    defer {
+        HoliDateEnvironment.dateProvider = originalProvider
+        HoliDateEnvironment.calendarOverride = originalCalendar
+        HolidayStore.shared.update(originalHolidays)
+    }
     run()
-
-    HoliDateEnvironment.dateProvider = originalProvider
-    HoliDateEnvironment.calendarOverride = originalCalendar
-    HolidayStore.shared.update(originalHolidays)
 }
 
 private struct PreviewDateProvider: DateProvider {
     let now: Date
     init(_ date: Date) { self.now = date }
+}
+
+/// Renders content using a fixed date and an independent holiday store.
+/// Overrides apply to HoliDate's SwiftUI property wrappers in this subtree.
+@MainActor
+public struct HoliDatePreview<Content: View>: View {
+    @State private var store: HolidayStore
+    private let content: Content
+
+    public init(
+        date: Date,
+        holidays: [any Holiday],
+        calendar: Calendar = .current,
+        @ViewBuilder content: () -> Content
+    ) {
+        let store = HolidayStore(
+            observesTimeChanges: false,
+            now: { date },
+            calendar: { calendar }
+        )
+        store.update(holidays)
+        _store = State(initialValue: store)
+        self.content = content()
+    }
+
+    public var body: some View {
+        content.environment(store)
+    }
 }

@@ -187,6 +187,9 @@ do {
 }
 ```
 
+`registerDefaultHolidays()` registers all three built-ins atomically. If any is already
+registered, it throws without adding any of the others.
+
 ## Built-in Holidays
 
 HoliDate includes three built-in holidays:
@@ -195,19 +198,27 @@ HoliDate includes three built-in holidays:
 - **Easter** (`HoliDate.Easter`): Calculated using Computus algorithm for Western Easter
 - **Black Friday** (`HoliDate.BlackFriday`): Day after U.S. Thanksgiving (4th Thursday of November)
 
+Built-ins use Gregorian dates in the supplied calendar's time zone, regardless of
+the user's preferred calendar system. Custom holidays receive the original calendar
+and can follow their own calendar rules.
+
 ## Previews & Testing
 
-Use `withHoliDatePreview` to preview & test with custom dates and holidays:
+Use `HoliDatePreview` to give a SwiftUI preview its own fixed date and holiday store:
 
 ```swift
 #Preview {
     let christmasDate = Calendar.current.date(from: .init(year: 2025, month: 12, day: 25))!
 
-    withHoliDatePreview(date: christmasDate, holidays: [HoliDate.Christmas]) {
+    HoliDatePreview(date: christmasDate, holidays: [HoliDate.Christmas]) {
         ContentView()
     }
 }
 ```
+
+Each preview keeps its overrides for its lifetime without changing other previews or the app.
+Overrides apply to the SwiftUI property wrappers; static queries use the shared store.
+For synchronous tests, use `withHoliDatePreview`:
 
 ```swift
 import Testing

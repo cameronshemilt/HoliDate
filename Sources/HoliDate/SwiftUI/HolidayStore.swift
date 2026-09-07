@@ -18,6 +18,7 @@ final class HolidayStore {
 
     init(
         notificationCenter: NotificationCenter = .default,
+        observesTimeChanges: Bool = true,
         now: @escaping () -> Date = { HoliDateEnvironment.dateProvider.now },
         calendar: @escaping () -> Calendar = { HoliDateEnvironment.calendar }
     ) {
@@ -25,8 +26,10 @@ final class HolidayStore {
         self.currentCalendar = calendar
         self.today = now()
         self.calendar = calendar()
-        timeObserver = HolidayTimeObserver(center: notificationCenter) { [weak self] in
-            self?.refresh()
+        if observesTimeChanges {
+            timeObserver = HolidayTimeObserver(center: notificationCenter) { [weak self] in
+                self?.refresh()
+            }
         }
     }
 

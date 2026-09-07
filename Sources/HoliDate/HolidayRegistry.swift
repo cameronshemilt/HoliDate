@@ -7,10 +7,20 @@ actor HolidayRegistry {
     private var holidays: [String: any Holiday] = [:]
 
     func register(_ holiday: any Holiday) async throws {
-        if holidays[holiday.id] != nil {
-            throw HolidayError.duplicateID(holiday.id)
+        try await register([holiday])
+    }
+
+    /// Validates the entire batch before committing or publishing any changes.
+    func register(_ newHolidays: [any Holiday]) async throws {
+        var ids = Set(holidays.keys)
+        for holiday in newHolidays {
+            guard ids.insert(holiday.id).inserted else {
+                throw HolidayError.duplicateID(holiday.id)
+            }
         }
-        holidays[holiday.id] = holiday
+        for holiday in newHolidays {
+            holidays[holiday.id] = holiday
+        }
         await HoliDate.refreshSnapshot()
     }
 

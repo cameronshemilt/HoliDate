@@ -11,6 +11,7 @@ public final class EasterHoliday: Holiday {
     private init() {}
 
     public func isDuring(_ date: Date, calendar: Calendar) -> Bool {
+        let calendar = calendar.holidayGregorianCalendar
         guard let easter = easterDate(
             year: calendar.component(.year, from: date),
             calendar: calendar
@@ -20,6 +21,7 @@ public final class EasterHoliday: Holiday {
     }
 
     public func nextOccurrence(after date: Date, calendar: Calendar) -> Date? {
+        let calendar = calendar.holidayGregorianCalendar
         let year = calendar.component(.year, from: date)
 
         guard let thisYear = easterDate(year: year, calendar: calendar) else {

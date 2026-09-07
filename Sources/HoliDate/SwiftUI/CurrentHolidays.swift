@@ -5,7 +5,9 @@ import SwiftUI
 @MainActor
 public struct CurrentHolidays: DynamicProperty {
 
-    @State private var store: HolidayStore = HolidayStore.shared
+    @Environment(HolidayStore.self) private var previewStore: HolidayStore?
+
+    private var store: HolidayStore { previewStore ?? .shared }
 
     public init() {}
 

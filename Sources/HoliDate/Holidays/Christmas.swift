@@ -11,15 +11,17 @@ public final class ChristmasHoliday: Holiday {
     private init() {}
 
     public func isDuring(_ date: Date, calendar: Calendar) -> Bool {
+        let calendar = calendar.holidayGregorianCalendar
         let year = calendar.component(.year, from: date)
         guard let start = calendar.date(from: .init(year: year, month: 12, day: 24)),
-              let end = calendar.date(from: .init(year: year, month: 12, day: 26)) else {
+              let end = calendar.date(from: .init(year: year, month: 12, day: 27)) else {
             return false
         }
-        return date >= start && date <= end
+        return date >= start && date < end
     }
 
     public func nextOccurrence(after date: Date, calendar: Calendar) -> Date? {
+        let calendar = calendar.holidayGregorianCalendar
         let year = calendar.component(.year, from: date)
         guard let thisYear = calendar.date(from: .init(year: year, month: 12, day: 24)) else {
             return nil

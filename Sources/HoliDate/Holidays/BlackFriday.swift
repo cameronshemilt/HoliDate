@@ -11,6 +11,7 @@ public final class BlackFridayHoliday: Holiday {
     private init() {}
 
     public func isDuring(_ date: Date, calendar: Calendar) -> Bool {
+        let calendar = calendar.holidayGregorianCalendar
         guard let blackFriday = blackFridayDate(
             year: calendar.component(.year, from: date),
             calendar: calendar
@@ -23,6 +24,7 @@ public final class BlackFridayHoliday: Holiday {
         after date: Date,
         calendar: Calendar
     ) -> Date? {
+        let calendar = calendar.holidayGregorianCalendar
         let year = calendar.component(.year, from: date)
 
         if let thisYear = blackFridayDate(year: year, calendar: calendar),
