@@ -1,8 +1,25 @@
 import Foundation
 import Observation
 import Testing
-import XCTest
 @testable import HoliDate
+
+private func waitForChange(_ changes: AsyncStream<Void>) async -> Bool {
+    await withTaskGroup(of: Bool.self) { group in
+        group.addTask {
+            for await _ in changes {
+                return true
+            }
+            return false
+        }
+        group.addTask {
+            try? await Task.sleep(for: .seconds(2))
+            return false
+        }
+        let changed = await group.next() ?? false
+        group.cancelAll()
+        return changed
+    }
+}
 
 @MainActor
 private final class TestClock {
@@ -29,11 +46,12 @@ func systemEventsRefreshDateAndHolidayResults() async {
         #expect(store.currentHolidays().isEmpty)
         let firstOccurrence = store.nextUpcomingHoliday(after: store.today)?.1
 
-        let changed = XCTestExpectation(description: "Refresh for \(name.rawValue)")
+        let changes = AsyncStream<Void>.makeStream()
         withObservationTracking {
             _ = store.currentHolidays()
         } onChange: {
-            changed.fulfill()
+            changes.continuation.yield(())
+            changes.continuation.finish()
         }
 
         clock.date = clock.calendar.date(from: .init(year: 2025, month: 12, day: 25, hour: 12))!
@@ -41,8 +59,7 @@ func systemEventsRefreshDateAndHolidayResults() async {
         await Task.detached {
             center.post(name: name, object: nil)
         }.value
-        let result = await XCTWaiter.fulfillment(of: [changed], timeout: 2)
-        #expect(result == .completed)
+        #expect(await waitForChange(changes.stream), "Refresh for \(name.rawValue)")
         #expect(store.today == clock.date)
         #expect(store.currentHolidays().map(\.id) == ["christmas"])
         #expect(store.holidays.map(\.id) == ["christmas"])
@@ -60,16 +77,16 @@ func timeZoneChangeRecomputesHolidaysWithoutChangingTheInstant() async {
     store.update([HoliDate.Christmas])
     #expect(store.currentHolidays().count == 1)
 
-    let changed = XCTestExpectation(description: "Calendar refresh")
+    let changes = AsyncStream<Void>.makeStream()
     withObservationTracking {
         _ = store.calendar
     } onChange: {
-        changed.fulfill()
+        changes.continuation.yield(())
+        changes.continuation.finish()
     }
     clock.calendar.timeZone = TimeZone(identifier: "America/Los_Angeles")!
     center.post(name: .NSSystemTimeZoneDidChange, object: nil)
-    let result = await XCTWaiter.fulfillment(of: [changed], timeout: 2)
-    #expect(result == .completed)
+    #expect(await waitForChange(changes.stream), "Calendar refresh")
     #expect(store.today == clock.date)
     #expect(store.calendar.timeZone == clock.calendar.timeZone)
     #expect(store.currentHolidays().isEmpty)
