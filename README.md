@@ -1,9 +1,36 @@
-#  HoliDate
-HoliDate is a lightweight, Swift-native library for detecting current and upcoming holidays in a concurrency-safe, SwiftUI-friendly, and extensible way.
+# HoliDate
+
+A lightweight, Swift-native library for detecting current and upcoming holidays in a concurrency-safe, SwiftUI-friendly, and extensible way.
+
+Built with Swift 6.2+ strict concurrency compliance.
+
+
+## Requirements
+
+- iOS 17.0+ / macOS 14.0+
+- Swift 6.2+
+- Xcode 16.0+
 
 ## Installation
 
+### Swift Package Manager
+
+Add HoliDate to your `Package.swift`:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/cameronshemilt/HoliDate.git", from: "1.0.0")
+]
+```
+
+Or add it through Xcode:
+1. File → Add Package Dependencies
+2. Enter the repository URL (`https://github.com/cameronshemilt/HoliDate`)
+3. Select version requirements
+
 ## Setup
+
+Register holidays at app startup:
 
 ```swift
 import HoliDate
@@ -13,26 +40,21 @@ struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+                    // Register built-in holidays
+                    try? await HoliDate.registerDefaultHolidays()
+                }
         }
-        .task {
-            await HoliDate.registerDefaultHolidays()
-        }
-}
     }
 }
-
 ```
-
-If you want the SwiftUI property wrappers to automatically update after midnight, you have to additionally call `startMidnightScheduler()`.
 
 ## Usage
 
-### Getting the current holidays
-```swift
-    let holidays = await HoliDate.getCurrentHolidays()
-```
+### Getting Current Holidays
 
-Or use the SwiftUI property wrapper.
+**Using the property wrapper (recommended for SwiftUI):**
+
 ```swift
 struct ContentView: View {
     @CurrentHolidays private var holidays
@@ -43,10 +65,22 @@ struct ContentView: View {
         }
     }
 }
-
 ```
 
-### Checking a specific holiday
+**Using the static method:**
+
+```swift
+@MainActor
+func checkHolidays() {
+    let holidays = HoliDate.getCurrentHolidays()
+    for holiday in holidays {
+        print("Today is \(holiday.name)")
+    }
+}
+```
+
+### Checking a Specific Holiday
+
 ```swift
 struct ContentView: View {
     @IsHolidayToday(HoliDate.Christmas) private var isChristmas
@@ -59,41 +93,37 @@ struct ContentView: View {
         }
     }
 }
-
 ```
 
-### Getting the next upcoming holiday
+### Getting the Next Upcoming Holiday
+
 ```swift
 struct ContentView: View {
     @UpcomingHoliday private var upcomingHoliday
 
     var body: some View {
         if let holiday = upcomingHoliday {
-            Text("Next holiday: \(upcomingHoliday.name)")
-            
-            // Access the upcoming date using the projected value
-            if let date = $holiday {
+            Text("Next holiday: \(holiday.name)")
+
+            // Access the date using the projected value
+            if let date = $upcomingHoliday {
                 Text("On \(date.formatted())")
             }
-        } else {
-            Text("No holidays registered")
         }
     }
 }
-
 ```
 
-## Creating custom holidays
-To create a custom holiday, conform to the `Holiday` protocol.
+## Creating Custom Holidays
 
-All holidays should:
-1. Have a **stable** & **unique** `id`.
-2. Use the **passed** `Calendar` for all calculations.
+Conform to the `Holiday` protocol and follow these requirements:
 
-> Note:
-> Don't forget to *Register* your holidays
+1. **Unique, stable ID**: Use kebab-case (e.g., "new-years-day")
+2. **Singleton pattern**: Provide a static `shared` instance
+3. **Use passed Calendar**: Never use `Calendar.current` - always use the `calendar` parameter
 
-**Example: New Years Day**
+### Example: New Year's Day
+
 ```swift
 import Foundation
 import HoliDate
@@ -103,7 +133,7 @@ public final class NewYearsDayHoliday: Holiday {
     public static let shared = NewYearsDayHoliday()
 
     public let id = "new-years-day"
-    public let name = "New Year’s Day"
+    public let name = "New Year's Day"
 
     private init() {}
 
@@ -112,14 +142,11 @@ public final class NewYearsDayHoliday: Holiday {
         return components.month == 1 && components.day == 1
     }
 
-    public func nextOccurrence(
-        after date: Date,
-        calendar: Calendar
-    ) -> Date? {
+    public func nextOccurrence(after date: Date, calendar: Calendar) -> Date? {
         let year = calendar.component(.year, from: date)
-        let thisYear = calendar.date(
-            from: .init(year: year, month: 1, day: 1)
-        )!
+        guard let thisYear = calendar.date(from: .init(year: year, month: 1, day: 1)) else {
+            return nil
+        }
 
         return thisYear > date
             ? thisYear
@@ -130,20 +157,68 @@ public final class NewYearsDayHoliday: Holiday {
 extension HoliDate {
     public static let NewYearsDay = NewYearsDayHoliday.shared
 }
-
 ```
 
 ## Registering & Deregistering Holidays
-HoliDate uses an actor-isolated registry, so all mutations are async and safe.
 
-### Registering a holiday
+The registry is actor-isolated and thread-safe. Registration and deregistration automatically refresh the snapshot.
+
+### Registering a Holiday
+
 ```swift
-await HolidayRegistry.shared.register(NewYearsDayHoliday.shared)
-await HoliDate.refreshSnapshot()
+try await HoliDate.register(HoliDate.NewYearsDay)
 ```
 
-### Deregistering a holiday
+### Deregistering a Holiday
+
 ```swift
-await HolidayRegistry.shared.deregister(NewYearsDayHoliday.shared)
-await HoliDate.refreshSnapshot()
+try await HoliDate.deregister(HoliDate.NewYearsDay)
+```
+
+`registerDefaultHolidays()` registers Christmas and Easter atomically. If either is already
+registered, it throws without adding the other. Register Black Friday separately if needed.
+
+## Built-in Holidays
+
+| Holiday | API | Dates | Registered by default |
+| --- | --- | --- | :---: |
+| Christmas | `HoliDate.Christmas` | December 24-26, covering Christmas Eve, Christmas Day, and Boxing Day | ✅ |
+| Easter | `HoliDate.Easter` | Western Easter Sunday, calculated using the Computus algorithm | ✅ |
+| Black Friday | `HoliDate.BlackFriday` | The day after U.S. Thanksgiving, the fourth Thursday of November | ❌ |
+
+Built-ins use Gregorian dates in the supplied calendar's time zone, regardless of
+the user's preferred calendar system. Custom holidays receive the original calendar
+and can follow their own calendar rules.
+
+## Previews & Testing
+
+Use `HoliDatePreview` to give a SwiftUI preview its own fixed date and holiday store:
+
+```swift
+#Preview {
+    let christmasDate = Calendar.current.date(from: .init(year: 2025, month: 12, day: 25))!
+
+    HoliDatePreview(date: christmasDate, holidays: [HoliDate.Christmas]) {
+        ContentView()
+    }
+}
+```
+
+Each preview keeps its overrides for its lifetime without changing other previews or the app.
+Overrides apply to the SwiftUI property wrappers; static queries use the shared store.
+For synchronous tests, use `withHoliDatePreview`:
+
+```swift
+import Testing
+@testable import HoliDate
+
+@Test
+@MainActor
+func testChristmasDetection() {
+    let christmasDate = Calendar.current.date(from: .init(year: 2025, month: 12, day: 25))!
+
+    withHoliDatePreview(date: christmasDate, holidays: [HoliDate.Christmas]) {
+        #expect(IsHolidayToday(HoliDate.Christmas).wrappedValue)
+    }
+}
 ```

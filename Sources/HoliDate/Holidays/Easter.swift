@@ -5,11 +5,13 @@ public final class EasterHoliday: Holiday {
     public static let shared = EasterHoliday()
 
     public let id = "easter"
+
     public let name = "Easter"
 
     private init() {}
 
     public func isDuring(_ date: Date, calendar: Calendar) -> Bool {
+        let calendar = calendar.holidayGregorianCalendar
         guard let easter = easterDate(
             year: calendar.component(.year, from: date),
             calendar: calendar
@@ -19,8 +21,13 @@ public final class EasterHoliday: Holiday {
     }
 
     public func nextOccurrence(after date: Date, calendar: Calendar) -> Date? {
+        let calendar = calendar.holidayGregorianCalendar
         let year = calendar.component(.year, from: date)
-        let thisYear = easterDate(year: year, calendar: calendar)!
+
+        guard let thisYear = easterDate(year: year, calendar: calendar) else {
+            return nil
+        }
+
         return thisYear > date
             ? thisYear
             : easterDate(year: year + 1, calendar: calendar)
